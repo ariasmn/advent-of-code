@@ -150,5 +150,6 @@ func parseInput() {
 func main() {
 	parseInput()
 	part1()
-	// No part 2 this time. The approach that I took on this makes it almost impossible. A refactor would be needed...
+	// For part 2, the best shot is to manually parse the cube and calculate
+	// Actually, I did print a cube given my input and calculated it manually, so no code for this one...
 }
