@@ -1,6 +1,6 @@
 # Advent Of Code
 
-In this repository, you will find solutions for the [Advent Of Code](https://adventofcode.com/) problems using Golang.
+In this repository, you will find solutions for the [Advent Of Code](https://adventofcode.com/) problems using multiple languages.
 
 Please, bear in mind that I'm not a competitive programmer, so the idea behind this repository is to write code as readable as posible (although sometimes I was a bit tired to do so :grin:).
 
