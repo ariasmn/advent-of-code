@@ -4,17 +4,17 @@
 #include "../helper.h"
 
 int main() {
-    char *file_content = read_file("input.txt");
+    FILE *fptr = fopen("inputa.txt", "r");
+    char **file_content = read_file(fptr);
 
     if (file_content == NULL) {
-        printf("Failed to read file.\n");
         return 1;
     }
 
-    // Print the entire file content
-    printf("%s\n", file_content);
-
-    // Free the allocated memory
+    for (size_t i = 0; file_content[i] != NULL; i++) {
+        printf("%s", file_content[i]);
+        free(file_content[i]);  // Free each line
+    }
     free(file_content);
 
     return 0;
