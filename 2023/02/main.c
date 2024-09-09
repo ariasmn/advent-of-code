@@ -139,6 +139,111 @@ int part_1(char **file_content)
     return sum_game_id;
 }
 
+int part_2(char **file_content)
+{
+    // Similar to part 1, but just saving the max number of cubes needed for each color.
+    // Could be refactored to avoid code dupe, but whatever :).
+    int sum_max_cubes = 0;
+    for (int i = 0; file_content[i] != NULL; i++)
+    {
+        char *modified_line = malloc(strlen(file_content[i]) + 1);
+        strcpy(modified_line, file_content[i]);
+
+        char game_buffer[12];
+        snprintf(game_buffer, sizeof(game_buffer), "Game %d: ", i + 1);
+        modified_line = str_replace(modified_line, game_buffer, "");
+        modified_line = str_replace(modified_line, ", ", "");
+        modified_line = str_replace(modified_line, "; ", ";");
+
+        modified_line = str_replace(modified_line, "\n", "");
+        size_t mod_len = strlen(modified_line);
+        modified_line = realloc(modified_line, mod_len + 2);
+        modified_line[mod_len] = ';';
+        modified_line[mod_len + 1] = '\0';
+
+        for (int i = 0; i < NUM_REPLACEMENTS; i++)
+        {
+            modified_line = str_replace(modified_line, replacements[i][0], replacements[i][1]);
+        }
+
+        int current_number = 0;
+        int game_blue = 0;
+        int game_red = 0;
+        int game_green = 0;
+
+        // New vars for part 2
+        int max_game_blue = 0;
+        int max_game_red = 0;
+        int max_game_green = 0;
+
+        for (int j = 0; modified_line[j] != '\0'; j++)
+        {
+            if (!isdigit(modified_line[j]) && modified_line[j] != ';')
+            {
+                continue;
+            }
+
+            if (modified_line[j] == ';')
+            {
+                // Set the max when finishing the round
+                if (game_blue > max_game_blue) {
+                    max_game_blue = game_blue;
+                }
+                if (game_red > max_game_red) {
+                    max_game_red = game_red;
+                }
+                if (game_green > max_game_green) {
+                    max_game_green = game_green;
+                }
+
+                current_number = 0;
+                game_blue = 0;
+                game_red = 0;
+                game_green = 0;
+
+                continue;
+            }
+
+            if (current_number != 0) {
+                current_number += (modified_line[j] - '0');
+            } else {
+                current_number = (modified_line[j] - '0');
+            }
+
+            if (isdigit(modified_line[j+1]))
+            {
+                current_number *= 10;
+                continue;
+            }
+
+            if (modified_line[j + 1] == 'b')
+            {
+                game_blue += current_number;
+                current_number = 0;
+            }
+            else if (modified_line[j + 1] == 'r')
+            {
+                game_red += current_number;
+                current_number = 0;
+            }
+            else if (modified_line[j + 1] == 'g')
+            {
+                game_green += current_number;
+                current_number = 0;
+            }
+        }
+        free(modified_line);
+
+
+        printf("%d, ", max_game_blue);
+        printf("%d, ", max_game_red);
+        printf("%d\n", max_game_green);
+        sum_max_cubes += (max_game_blue * max_game_red * max_game_green);
+    }
+
+    return sum_max_cubes;
+}
+
 int main()
 {
     FILE *fptr = fopen("input.txt", "r");
@@ -150,7 +255,7 @@ int main()
     }
 
     printf("Part 1: %d\n", part_1(file_content));
-    // printf("Part 2: %d\n", part_2(file_content));
+    printf("Part 2: %d\n", part_2(file_content));
 
     free(file_content);
 
