@@ -79,7 +79,7 @@ int part_1(char **file_content)
                 number_count = 0;
             }
         }
-
+        free(modified_line);
         card_arr_size++;
     }
 
@@ -108,6 +108,7 @@ int part_1(char **file_content)
         total_points += card_points;
     }
 
+    free(cards);
     return total_points;
 }
 
