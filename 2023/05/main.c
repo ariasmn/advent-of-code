@@ -71,6 +71,21 @@ enum CurrentMap get_current_map(char *current_line) {
     return HUMIDITYTOLOCATION;
 }
 
+// Process a seed through all maps
+void process_seed(long long int *seed, struct Map *maps[], int map_sizes[]) {
+    // Process through all map stages
+    for (int stage = 0; stage < 7; stage++) {
+        for (int j = 0; j < map_sizes[stage]; j++) {
+            struct Map current = maps[stage][j];
+            if (long_long_int_between(*seed, current.source_range_start, current.source_range_start + current.range_length - 1)) {
+                // Update the seed with the corresponding destination value
+                *seed = current.dest_range_start + (*seed - current.source_range_start);
+                break; // Break after applying the first valid mapping in this stage
+            }
+        }
+    }
+}
+
 int part_1(char **file_content)
 {
     int seed_arr_size = 0;
@@ -99,26 +114,9 @@ int part_1(char **file_content)
 
     enum CurrentMap current = SEEDTOSOIL;
 
-    int seed_to_soil_arr_size = 0;
-    struct Map *seed_to_soil = NULL;
-
-    int soil_to_fertilizer_arr_size = 0;
-    struct Map *soil_to_fertilizer = NULL;
-
-    int fertilizer_to_water_arr_size = 0;
-    struct Map *fertilizer_to_water = NULL;
-
-    int water_to_light_arr_size = 0;
-    struct Map *water_to_light = NULL;
-
-    int light_to_temperature_arr_size = 0;
-    struct Map *light_to_temperature = NULL;
-
-    int temperature_to_humidity_arr_size = 0;
-    struct Map *temperature_to_humidity = NULL;
-
-    int humidity_to_location_arr_size = 0;
-    struct Map *humidity_to_location = NULL;
+    // Create arrays to hold maps for each stage
+    struct Map *maps[7] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    int map_sizes[7] = {0, 0, 0, 0, 0, 0, 0};
 
     // Parse maps
     for (int i = 1; file_content[i] != NULL; i++)
@@ -139,121 +137,14 @@ int part_1(char **file_content)
         struct Map map;
         sscanf(file_content[i], "%lld %lld %lld", &map.dest_range_start, &map.source_range_start, &map.range_length);
 
-        // Add to the correct map.
-        switch (current)
-        {
-            case SEEDTOSOIL:
-                seed_to_soil = realloc(seed_to_soil, (seed_to_soil_arr_size + 1) * sizeof(struct Map));
-                seed_to_soil[seed_to_soil_arr_size] = map;
-                seed_to_soil_arr_size++;
-                break;
-            case SOILTOFERTILIZER:
-                soil_to_fertilizer = realloc(soil_to_fertilizer, (soil_to_fertilizer_arr_size + 1) * sizeof(struct Map));
-                soil_to_fertilizer[soil_to_fertilizer_arr_size] = map;
-                soil_to_fertilizer_arr_size++;
-                break;
-            case FERTILIZERTOWATER:
-                fertilizer_to_water = realloc(fertilizer_to_water, (fertilizer_to_water_arr_size + 1) * sizeof(struct Map));
-                fertilizer_to_water[fertilizer_to_water_arr_size] = map;
-                fertilizer_to_water_arr_size++;
-                break;
-            case WATERTOLIGHT:
-                water_to_light = realloc(water_to_light, (water_to_light_arr_size + 1) * sizeof(struct Map));
-                water_to_light[water_to_light_arr_size] = map;
-                water_to_light_arr_size++;
-                break;
-            case LIGHTTOTEMPERATURE:
-                light_to_temperature = realloc(light_to_temperature, (light_to_temperature_arr_size + 1) * sizeof(struct Map));
-                light_to_temperature[light_to_temperature_arr_size] = map;
-                light_to_temperature_arr_size++;
-                break;
-            case TEMPERATURETOHUMIDITY:
-                temperature_to_humidity = realloc(temperature_to_humidity, (temperature_to_humidity_arr_size + 1) * sizeof(struct Map));
-                temperature_to_humidity[temperature_to_humidity_arr_size] = map;
-                temperature_to_humidity_arr_size++;
-                break;
-            case HUMIDITYTOLOCATION:
-                humidity_to_location = realloc(humidity_to_location, (humidity_to_location_arr_size + 1) * sizeof(struct Map));
-                humidity_to_location[humidity_to_location_arr_size] = map;
-                humidity_to_location_arr_size++;
-                break;
-        }
+        maps[current] = realloc(maps[current], (map_sizes[current] + 1) * sizeof(struct Map));
+        maps[current][map_sizes[current]] = map;
+        map_sizes[current]++;
     }
 
-    // With everything parsed, we start calculate.
-    // Iterate each number and do the substitutions.
-    // This is extremely rudimentary, but I'm really hating this day.
-    for (int i = 0; i < seed_arr_size; i++)
-    {
-        for (int j = 0; j < seed_to_soil_arr_size; j++)
-        {
-            struct Map current = seed_to_soil[j];
-            if (long_long_int_between(seeds[i], current.source_range_start, (current.source_range_start + current.range_length - 1)))
-            {
-                seeds[i] = current.dest_range_start + (seeds[i] - current.source_range_start);
-                break;
-            }
-        }
-
-        for (int j = 0; j < soil_to_fertilizer_arr_size; j++)
-        {
-            struct Map current = soil_to_fertilizer[j];
-            if (long_long_int_between(seeds[i], current.source_range_start, (current.source_range_start + current.range_length - 1)))
-            {
-                seeds[i] = current.dest_range_start + (seeds[i] - current.source_range_start);
-                break;
-            }
-        }
-
-        for (int j = 0; j < fertilizer_to_water_arr_size; j++)
-        {
-            struct Map current = fertilizer_to_water[j];
-            if (long_long_int_between(seeds[i], current.source_range_start, (current.source_range_start + current.range_length - 1)))
-            {
-                seeds[i] = current.dest_range_start + (seeds[i] - current.source_range_start);
-                break;
-            }
-        }
-
-        for (int j = 0; j < water_to_light_arr_size; j++)
-        {
-            struct Map current = water_to_light[j];
-            if (long_long_int_between(seeds[i], current.source_range_start, (current.source_range_start + current.range_length - 1)))
-            {
-                seeds[i] = current.dest_range_start + (seeds[i] - current.source_range_start);
-                break;
-            }
-        }
-
-        for (int j = 0; j < light_to_temperature_arr_size; j++)
-        {
-            struct Map current = light_to_temperature[j];
-            if (long_long_int_between(seeds[i], current.source_range_start, (current.source_range_start + current.range_length - 1)))
-            {
-                seeds[i] = current.dest_range_start + (seeds[i] - current.source_range_start);
-                break;
-            }
-        }
-
-        for (int j = 0; j < temperature_to_humidity_arr_size; j++)
-        {
-            struct Map current = temperature_to_humidity[j];
-            if (long_long_int_between(seeds[i], current.source_range_start, (current.source_range_start + current.range_length - 1)))
-            {
-                seeds[i] = current.dest_range_start + (seeds[i] - current.source_range_start);
-                break;
-            }
-        }
-
-        for (int j = 0; j < humidity_to_location_arr_size; j++)
-        {
-            struct Map current = humidity_to_location[j];
-            if (long_long_int_between(seeds[i], current.source_range_start, (current.source_range_start + current.range_length - 1)))
-            {
-                seeds[i] = current.dest_range_start + (seeds[i] - current.source_range_start);
-                break;
-            }
-        }
+    // Process each seed through all maps
+    for (int i = 0; i < seed_arr_size; i++) {
+        process_seed(&seeds[i], maps, map_sizes);
     }
 
     long long int lowest_number = LLONG_MAX;
@@ -263,6 +154,11 @@ int part_1(char **file_content)
         {
             lowest_number = seeds[i];
         }
+    }
+
+    // Cleanup
+    for (int stage = 0; stage < 7; stage++) {
+        free(maps[stage]);
     }
 
     return lowest_number;
