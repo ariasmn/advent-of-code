@@ -17,7 +17,8 @@
 #define TEMPERATURE_TO_HUMIDITY "temperature-to-humidity map:"
 #define HUMIDITY_TO_LOCATION "humidity-to-location map:"
 
-enum CurrentMap {
+enum CurrentMap
+{
     SEEDTOSOIL,
     SOILTOFERTILIZER,
     FERTILIZERTOWATER,
@@ -34,7 +35,8 @@ struct Map
     long long int range_length;
 };
 
-enum CurrentMap get_current_map(char *current_line) {
+enum CurrentMap get_current_map(char *current_line)
+{
     // Remove new line before compare.
     char *without_new_line = str_replace(current_line, "\n", "");
 
@@ -52,7 +54,7 @@ enum CurrentMap get_current_map(char *current_line) {
     {
         return FERTILIZERTOWATER;
     }
-    
+
     if (string_equal(without_new_line, WATER_TO_LIGHT))
     {
         return WATERTOLIGHT;
@@ -72,12 +74,16 @@ enum CurrentMap get_current_map(char *current_line) {
 }
 
 // Process a seed through all maps
-void process_seed(long long int *seed, struct Map *maps[], int map_sizes[]) {
+void process_seed(long long int *seed, struct Map *maps[], int map_sizes[])
+{
     // Process through all map stages
-    for (int stage = 0; stage < 7; stage++) {
-        for (int j = 0; j < map_sizes[stage]; j++) {
+    for (int stage = 0; stage < 7; stage++)
+    {
+        for (int j = 0; j < map_sizes[stage]; j++)
+        {
             struct Map current = maps[stage][j];
-            if (long_long_int_between(*seed, current.source_range_start, current.source_range_start + current.range_length - 1)) {
+            if (long_long_int_between(*seed, current.source_range_start, current.source_range_start + current.range_length - 1))
+            {
                 // Update the seed with the corresponding destination value
                 *seed = current.dest_range_start + (*seed - current.source_range_start);
                 break; // Break after applying the first valid mapping in this stage
@@ -122,7 +128,8 @@ int part_1(char **file_content)
     for (int i = 1; file_content[i] != NULL; i++)
     {
         // Skip new lines
-        if (file_content[i][0] == '\n') {
+        if (file_content[i][0] == '\n')
+        {
             continue;
         }
 
@@ -143,7 +150,8 @@ int part_1(char **file_content)
     }
 
     // Process each seed through all maps
-    for (int i = 0; i < seed_arr_size; i++) {
+    for (int i = 0; i < seed_arr_size; i++)
+    {
         process_seed(&seeds[i], maps, map_sizes);
     }
 
@@ -157,7 +165,8 @@ int part_1(char **file_content)
     }
 
     // Cleanup
-    for (int stage = 0; stage < 7; stage++) {
+    for (int stage = 0; stage < 7; stage++)
+    {
         free(maps[stage]);
     }
 
