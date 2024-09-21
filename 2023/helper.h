@@ -1,6 +1,12 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
+// Macro to return the minimum between two values.
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+// Macro to return the maximum between two values.
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 // Function to read the entire content of a file.
 // Returns a dynamically allocated array of strings containing the file content.
 // Caller is responsible for freeing the allocated memory.
