@@ -359,6 +359,6 @@ int main()
         return 1;
     }
 
-    // printf("Part 1: %lld\n", part_1(file_content));
+    printf("Part 1: %lld\n", part_1(file_content));
     printf("Part 2: %lld\n", part_2(file_content));
 }
