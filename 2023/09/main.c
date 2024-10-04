@@ -37,17 +37,50 @@ int get_next(long int *v, int len) {
     return result;
 }
 
+long int part_2(char **file_content)
+{
+    long int result = 0;
+
+    for (int i = 0; file_content[i] != NULL; i++)
+    {
+        char *line = malloc(strlen(file_content[i]) +1);
+        strcpy(line, file_content[i]);
+
+        long int history[NUMBERS_PER_LINE];
+        int history_arr_index = NUMBERS_PER_LINE -1;
+
+        // Same as part1, but reversing the array.
+        // Instead of doing so, we parse it in reverse, since we know we always have the same
+        // amount of numbers.
+        char *token = strtok(line, " ");
+        while (token != NULL)
+        {
+            history[history_arr_index] = atol(token);
+            history_arr_index--;
+            token = strtok(NULL, " ");
+        }
+
+        result += get_next(history, NUMBERS_PER_LINE);
+        free(line);
+    }
+
+    return result;
+}
+
 long int part_1(char **file_content)
 {
     long int result = 0;
 
     for (int i = 0; file_content[i] != NULL; i++)
     {
+        char *line = malloc(strlen(file_content[i]) +1);
+        strcpy(line, file_content[i]);
+
         long int history[NUMBERS_PER_LINE];
         int history_arr_index = 0;
 
         // Parse each history.
-        char *token = strtok(file_content[i], " ");
+        char *token = strtok(line, " ");
         while (token != NULL)
         {
             history[history_arr_index] = atol(token);
@@ -56,6 +89,7 @@ long int part_1(char **file_content)
         }
 
         result += get_next(history, NUMBERS_PER_LINE);
+        free(line);
     }
 
     return result;
@@ -72,5 +106,5 @@ int main()
     }
 
     printf("Part 1: %ld\n", part_1(file_content));
-    // printf("Part 2: %ld\n", part_2(file_content));
+    printf("Part 2: %ld\n", part_2(file_content));
 }
