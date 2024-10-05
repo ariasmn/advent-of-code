@@ -25,7 +25,8 @@ bool can_connect(char current, char next, int direction)
 {
     if (direction == 0) // Moving north
     {
-        if (current == '|' || current == 'J' || current == 'L' || current == 'S') {
+        if (current == '|' || current == 'J' || current == 'L' || current == 'S')
+        {
             return next == '|' || next == '7' || next == 'F' || next == 'S';
         }
     }
@@ -55,14 +56,13 @@ bool can_connect(char current, char next, int direction)
 }
 
 // BFS strikes again!
-int bfs(char grid[GRID_ROWS][GRID_COLUMNS], int start_row, int start_col)
+int bfs(char grid[GRID_ROWS][GRID_COLUMNS], int start_row, int start_col, bool visited[GRID_ROWS][GRID_COLUMNS])
 {
     int queue[GRID_ROWS * GRID_COLUMNS][2];
     int current = 0, next = 0;
 
     // Distance grid to store distances from the start point
     int distances[GRID_ROWS][GRID_COLUMNS] = {0};
-    bool visited[GRID_ROWS][GRID_COLUMNS] = {false};
 
     // Enqueue the start position
     queue[next][0] = start_row;
@@ -91,7 +91,7 @@ int bfs(char grid[GRID_ROWS][GRID_COLUMNS], int start_row, int start_col)
                 visited[new_row][new_col] = true;
                 distances[new_row][new_col] = distances[current_row][current_col] + 1;
                 max_distance = distances[new_row][new_col];
-                
+
                 // Enqueue the new position
                 queue[next][0] = new_row;
                 queue[next][1] = new_col;
@@ -106,6 +106,7 @@ int bfs(char grid[GRID_ROWS][GRID_COLUMNS], int start_row, int start_col)
 int part_1(char **file_content)
 {
     char grid[GRID_ROWS][GRID_COLUMNS];
+    bool visited[GRID_ROWS][GRID_COLUMNS] = {false};
 
     for (int i = 0; file_content[i] != NULL; i++)
     {
@@ -128,9 +129,83 @@ int part_1(char **file_content)
         }
     }
 
-    int result = bfs(grid, start_row, start_column);
+    int result = bfs(grid, start_row, start_column, visited);
 
     return result;
+}
+
+// This was way hard for me so again, had to look up solutions.
+// First tried to do the Flood Fill algorithm, which looked easy. Manage to correctly do all the test inputs,
+// but something was wrong using the big input, and debugging was getting harder.
+// Then, I saw some discussions about solving it using Ray Casting,
+// which is an amazing and simple algorithm (and shame on my side that didn't know about it)
+// The idea here is to:
+// Trace the way using the part 1 approach (BFS), to see what coords are inside and what are outside.
+// Then, use the Ray Casting algorithm to check which points are inside and which outside.
+int part_2(char **file_content)
+{
+    char grid[GRID_ROWS][GRID_COLUMNS];
+    bool visited[GRID_ROWS][GRID_COLUMNS] = {false};
+
+    for (int i = 0; i < GRID_ROWS; i++)
+    {
+        strncpy(grid[i], file_content[i], GRID_COLUMNS - 1);
+        grid[i][GRID_COLUMNS - 1] = '\0';
+    }
+
+    int start_row = 0, start_column = 0;
+    for (int r = 0; r < GRID_ROWS; r++)
+    {
+        for (int c = 0; c < GRID_COLUMNS - 1; c++)
+        {
+            if (grid[r][c] == 'S')
+            {
+                start_row = r;
+                start_column = c;
+                break;
+            }
+        }
+        if (start_row != 0) break;
+    }
+
+    // Use BFS to trace the visited
+    // Bit of cheating here, since I adapted the BFS function to receive the visited bool array
+    // instead of creating it inside the function so it gets modified and used here, to avoid code duplication.
+    // I know, not the cleanest, but honestly got kind of tired of this problem, so here it is.
+    bfs(grid, start_row, start_column, visited);
+
+    // Count enclosed tiles using ray casting algorithm
+    int enclosed_tiles = 0;
+    for (int r = 0; r < GRID_ROWS; r++)
+    {
+        int crossings = 0;
+        char last_turn = '\0';
+        for (int c = 0; c < GRID_COLUMNS - 1; c++)
+        {
+            if (visited[r][c])
+            {
+                char current = grid[r][c];
+                if (current == '|' || current == 'S')
+                {
+                    crossings++;
+                }
+                else if (current == 'L' || current == 'F')
+                {
+                    last_turn = current;
+                }
+                else if ((current == '7' && last_turn == 'L') || (current == 'J' && last_turn == 'F'))
+                {
+                    crossings++;
+                }
+            }
+            else if (crossings % 2 == 1)
+            {
+                enclosed_tiles++;
+            }
+        }
+    }
+
+    return enclosed_tiles;
 }
 
 int main()
@@ -144,5 +219,5 @@ int main()
     }
 
     printf("Part 1: %d\n", part_1(file_content));
-    // printf("Part 2: %ld\n", part_2(file_content));
+    printf("Part 2: %d\n", part_2(file_content));
 }
