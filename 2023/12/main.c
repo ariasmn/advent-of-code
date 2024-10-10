@@ -6,16 +6,47 @@
 
 #include "../helper.h"
 
-long long memo[200][200][200];
+// Global pointer for the 3D memoization array.
+long long ***memo;
 
-void init_memo() {
-    for (int i = 0; i < 200; i++) {
-        for (int j = 0; j < 200; j++) {
-            for (int k = 0; k < 200; k++) {
+// Function to allocate and initialize the 3D memoization array.
+void ***create_memo(int max_pos, int max_group, int max_length) {
+    memo = (long long ***)malloc((max_pos + 1) * sizeof(long long **));
+    if (memo == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
+
+    for (int i = 0; i <= max_pos; i++) {
+        memo[i] = (long long **)malloc((max_group + 1) * sizeof(long long *));
+        if (memo[i] == NULL) {
+            fprintf(stderr, "Memory allocation failed\n");
+            exit(1);
+        }
+
+        for (int j = 0; j <= max_group; j++) {
+            memo[i][j] = (long long *)malloc((max_length + 1) * sizeof(long long));
+            if (memo[i][j] == NULL) {
+                fprintf(stderr, "Memory allocation failed\n");
+                exit(1);
+            }
+
+            for (int k = 0; k <= max_length; k++) {
                 memo[i][j][k] = -1;
             }
         }
     }
+}
+
+// Function to free the dynamically allocated memory.
+void free_memo(int max_pos, int max_group) {
+    for (int i = 0; i <= max_pos; i++) {
+        for (int j = 0; j <= max_group; j++) {
+            free(memo[i][j]);
+        }
+        free(memo[i]);
+    }
+    free(memo);
 }
 
 // Recursive function to count the total arragements per line.
@@ -84,14 +115,26 @@ long long int part_1(char **file_content)
             token = strtok(NULL, ",");
         }
 
-        init_memo();
+        // Compute max_pos, max_group, and max_length dynamically.
+        int max_pos = strlen(spring);
+        int max_group = conditions_arr_size;
+        int max_length = 0;
+        for (int i = 0; i < conditions_arr_size; i++)
+        {
+            if (conditions[i] > max_length)
+            {
+                max_length = conditions[i];
+            }
+        }
 
-        // Count arrangements
+        create_memo(max_pos, max_group, max_length);
+
         long long arrangements = count_arrangements(spring, conditions, conditions_arr_size, 0, 0, 0);
         total_arrangements += arrangements;
 
         free(conditions);
         free(line);
+        free_memo(max_pos, max_group);
     }
 
     return total_arrangements;
@@ -124,7 +167,6 @@ long long int part_2(char **file_content)
         int *conditions = calloc(1, sizeof(int));
         int conditions_arr_size = 0;
 
-        // Parse the conditions to an int array.
         char *token = strtok(buffer_conditions, ",");
         while (token != NULL)
         {
@@ -133,9 +175,20 @@ long long int part_2(char **file_content)
             token = strtok(NULL, ",");
         }
 
-        init_memo();
+        // Compute max_pos, max_group, and max_length dynamically.
+        int max_pos = strlen(buffer_spring);
+        int max_group = conditions_arr_size;
+        int max_length = 0;
+        for (int i = 0; i < conditions_arr_size; i++)
+        {
+            if (conditions[i] > max_length)
+            {
+                max_length = conditions[i];
+            }
+        }
 
-        // Count arrangements
+        create_memo(max_pos, max_group, max_length);
+
         long long arrangements = count_arrangements(buffer_spring, conditions, conditions_arr_size, 0, 0, 0);
         total_arrangements += arrangements;
 
@@ -143,6 +196,7 @@ long long int part_2(char **file_content)
         free(buffer_conditions);
         free(conditions);
         free(line);
+        free_memo(max_pos, max_group);
     }
 
     return total_arrangements;
