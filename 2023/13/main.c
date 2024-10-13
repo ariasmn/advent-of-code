@@ -6,73 +6,64 @@
 
 #include "../helper.h"
 
-bool is_vertical_reflection(char **pattern, int rows, int cols, int line)
+
+char **transpose(char **pattern, int rows, int cols)
 {
-    for (int row = 0; row < rows; row++)
+    // Allocate memory for the transposed result
+    char **result = malloc(cols * sizeof(char *));
+    for (int i = 0; i < cols; i++)
     {
-        for (int offset = 0; offset < cols; offset++)
-        {
-            int left = line - offset - 1;
-            int right = line + offset;
-            if (left >= 0 && right < cols)
-            {
-                if (pattern[row][left] != pattern[row][right])
-                {
-                    return false;
-                }
-            }
-        }
+        result[i] = malloc((rows + 1) * sizeof(char)); // +1 for null terminator
     }
-    return true;
+
+    // Initialize the result array by transposing
+    for (int i = 0; i < cols; i++)
+    {
+        for (int j = 0; j < rows; j++)
+        {
+            result[i][j] = pattern[j][i];
+        }
+        // result[i][rows] = '\0'; // Null terminate each row
+    }
+
+    return result;
 }
 
-bool is_horizontal_reflection(char **pattern, int rows, int cols, int line)
+int find_reflection(char **pattern, int rows)
 {
-    // If the line we are reading is the same as the previous one, we find a reflection.
-    if (strcmp(pattern[line], pattern[line - 1]) == 0)
-    {
-        // We start on the next line after we find the first reflection.
-        for (int i = 1; i + line < rows; i++)
-        {
-            int after = line + i;
-            int before = line - i - 1;
-
-            // No row to compare, so if we get to this point, it's an horizontal reflection.
-            // We only need to check the before since the after is contemplated in the for loop conditions.
-            if (before < 0)
-            {
-                return true;
-            }
-
-            if (strcmp(pattern[after], pattern[before]) != 0)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    return false;
-}
-
-int find_reflection(char **pattern, int rows, int cols)
-{
-    // We start at one, since there can't be no reflection in the first position since it's out of bounds.
-    // This applies for both the vertical and horizontal.
-    for (int col = 1; col < cols; col++)
-    {
-        if (is_vertical_reflection(pattern, rows, cols, col))
-        {
-            return col;
-        }
-    }
-
     for (int row = 1; row < rows; row++)
     {
-        if (is_horizontal_reflection(pattern, rows, cols, row))
+        // If the line we are reading is the same as the previous one, we find a potential reflection.
+        if (strcmp(pattern[row], pattern[row - 1]) == 0)
         {
-            return 100 * row;
+            // Assume it's a reflection and start checking
+            bool is_reflection = true;
+
+            // We start on the next line after we find the first reflection.
+            for (int i = 1; i + row < rows; i++)
+            {
+                int after = row + i;
+                int before = row - i - 1;
+
+                // No row to compare, so if we get to this point, it's an horizontal reflection.
+                if (before < 0)
+                {
+                    return row;
+                }
+
+                // If any row doesn't match, it's not a valid reflection
+                if (strcmp(pattern[after], pattern[before]) != 0)
+                {
+                    is_reflection = false;
+                    break;
+                }
+            }
+
+            // Only return if the reflection is confirmed
+            if (is_reflection)
+            {
+                return row;
+            }
         }
     }
 
@@ -100,12 +91,14 @@ int part_1(char **file_content)
             }
 
             pattern_cols = strlen(pattern[0]) - 1;
-            total_result += find_reflection(pattern, pattern_rows, pattern_cols);
+            total_result += (find_reflection(pattern, pattern_rows) * 100);
+
+            pattern = transpose(pattern, pattern_rows, pattern_cols);
+            total_result += find_reflection(pattern, pattern_cols);
 
             pattern = NULL;
             pattern_rows = 0;
             pattern_cols = 0;
-
             continue;
         }
 
