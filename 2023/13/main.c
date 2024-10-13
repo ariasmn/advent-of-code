@@ -23,7 +23,6 @@ char **transpose(char **pattern, int rows, int cols)
         {
             result[i][j] = pattern[j][i];
         }
-        // result[i][rows] = '\0'; // Null terminate each row
     }
 
     return result;
