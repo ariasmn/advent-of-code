@@ -6,6 +6,7 @@
 
 #include "../helper.h"
 
+int current_part = 1;
 
 char **transpose(char **pattern, int rows, int cols)
 {
@@ -28,41 +29,72 @@ char **transpose(char **pattern, int rows, int cols)
     return result;
 }
 
+int count_differences(const char *str1, const char *str2)
+{
+    int differences = 0;
+    while (*str1 && *str2)
+    {
+        if (*str1 != *str2)
+        {
+            differences++;
+        }
+        str1++;
+        str2++;
+    }
+    // If strings are of different lengths, count remaining characters as differences
+    while (*str1)
+    {
+        differences++;
+        str1++;
+    }
+    while (*str2)
+    {
+        differences++;
+        str2++;
+    }
+    return differences;
+}
+
 int find_reflection(char **pattern, int rows)
 {
     for (int row = 1; row < rows; row++)
     {
-        // If the line we are reading is the same as the previous one, we find a potential reflection.
-        if (strcmp(pattern[row], pattern[row - 1]) == 0)
+        int total_differences = 0;
+        bool is_reflection = true;
+
+        for (int i = 0; row - i - 1 >= 0 && row + i < rows; i++)
         {
-            // Assume it's a reflection and start checking
-            bool is_reflection = true;
+            int before = row - i - 1;
+            int after = row + i;
 
-            // We start on the next line after we find the first reflection.
-            for (int i = 1; i + row < rows; i++)
+            // I know I know this isn't ideal but I was lazy to refactor it in a better way.
+            if (current_part == 1)
             {
-                int after = row + i;
-                int before = row - i - 1;
-
                 // No row to compare, so if we get to this point, it's an horizontal reflection.
-                if (before < 0)
-                {
-                    return row;
-                }
-
-                // If any row doesn't match, it's not a valid reflection
                 if (strcmp(pattern[after], pattern[before]) != 0)
                 {
                     is_reflection = false;
                     break;
                 }
             }
-
-            // Only return if the reflection is confirmed
-            if (is_reflection)
+            else
             {
-                return row;
+                // If the total differences is just 1 (or 0), we need to count it as a reflection.
+                // It's in reality, the same as the part_1 approach, just checking that there might be a single difference
+                // instead of none.
+                int diffs = count_differences(pattern[after], pattern[before]);
+                total_differences += diffs;
+                if (total_differences > 1)
+                {
+                    is_reflection = false;
+                    break;
+                }
             }
+        }
+
+        if (is_reflection && (current_part == 1 || total_differences == 1))
+        {
+            return row;
         }
     }
 
@@ -71,6 +103,50 @@ int find_reflection(char **pattern, int rows)
 
 int part_1(char **file_content)
 {
+    int total_result = 0;
+    int pattern_rows = 0;
+    int pattern_cols = 0;
+    char **pattern = NULL;
+
+    for (int i = 0; file_content[i] != NULL; i++)
+    {
+        // Pattern ending, either by new line or by end of file.
+        // Calculate reflections and clear the pattern.
+        if (file_content[i][0] == '\n' || file_content[i + 1] == NULL)
+        {
+            if (file_content[i][0] != '\n')
+            {
+                pattern = realloc(pattern, (pattern_rows + 1) * sizeof(char *));
+                pattern[pattern_rows] = file_content[i];
+                pattern_rows++;
+            }
+
+            pattern_cols = strlen(pattern[0]) - 1;
+            total_result += (find_reflection(pattern, pattern_rows) * 100);
+
+            pattern = transpose(pattern, pattern_rows, pattern_cols);
+            total_result += find_reflection(pattern, pattern_cols);
+
+            pattern = NULL;
+            pattern_rows = 0;
+            pattern_cols = 0;
+            continue;
+        }
+
+        // Parse the pattern each line.
+        pattern = realloc(pattern, (pattern_rows + 1) * sizeof(char *));
+        pattern[pattern_rows] = file_content[i];
+        pattern_rows++;
+    }
+
+    free(pattern);
+    return total_result;
+}
+
+int part_2(char **file_content)
+{
+    current_part = 2;
+
     int total_result = 0;
     int pattern_rows = 0;
     int pattern_cols = 0;
@@ -122,5 +198,5 @@ int main()
     }
 
     printf("Part 1: %d\n", part_1(file_content));
-    // printf("Part 2: %lld\n", part_2(file_content));
+    printf("Part 2: %d\n", part_2(file_content));
 }
