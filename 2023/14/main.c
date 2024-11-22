@@ -9,26 +9,12 @@
 #define DISH_MAX_X 100
 #define DISH_MAX_Y 100
 
-int part_1(char **file_content)
+// If it's a '0', we try to move up.
+// If it's a '#', we do nothing, and nothing can't be placed there.
+// If it's a '.', we do nothing, but a '0' can be placed there.
+// We start at 1, since nothing can be moved upper in 0.
+void tilt_north(char dish[DISH_MAX_Y][DISH_MAX_X + 1])
 {
-    // Create a 2D array that we will use to move the rocks.
-    char dish[DISH_MAX_X][DISH_MAX_Y + 1]; // Null terminator
-
-    for (int i = 0; file_content[i] != NULL; i++)
-    {
-        for (int j = 0; file_content[i][j] != '\0'; j++)
-        {
-            dish[i][j] = file_content[i][j];
-        }
-
-        dish[i][DISH_MAX_Y] = '\0';
-    }
-
-    // Iterate the dish and do the logic:
-    // If it's a '0', we try to move up.
-    // If it's a '#', we do nothing, and nothing can't be placed there.
-    // If it's a '.', we do nothing, but a '0' can be placed there.
-    // We start at 1, since nothing can be moved upper in 0.
     for (int i = 1; i < DISH_MAX_Y; i++)
     {
         for (int j = 0; j < DISH_MAX_X; j++)
@@ -53,6 +39,25 @@ int part_1(char **file_content)
             }
         }
     }
+}
+
+int part_1(char **file_content)
+{
+    // Create a 2D array that we will use to move the rocks.
+    char dish[DISH_MAX_X][DISH_MAX_Y + 1]; // Null terminator
+
+    for (int i = 0; file_content[i] != NULL; i++)
+    {
+        for (int j = 0; file_content[i][j] != '\0'; j++)
+        {
+            dish[i][j] = file_content[i][j];
+        }
+
+        dish[i][DISH_MAX_Y] = '\0';
+    }
+
+    // Iterate the dish and do the logic
+    tilt_north(dish);
 
     int total = 0;
     // Now, the dish is formatted and we just need to calculate.
