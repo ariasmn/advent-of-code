@@ -6,25 +6,34 @@
 
 #include "../helper.h"
 
-int part_1(char **file_content)
+int get_hash(const char *str)
 {
-    int current_val = 0;
-    int total_val = 0;
-
-    // Is just a single line, so we need to iterate it, but not the file itself.
-    for (int i = 0; file_content[0][i] != '\0'; i++)
+    int hash = 0;
+    for (int i = 0; str[i] != '\0'; i++)
     {
-        if (file_content[0][i] == ',' || !isprint(file_content[0][i]))
+        if (!isprint(str[i]))
         {
-            total_val += current_val;
-            current_val = 0;
             continue;
         }
+        hash += str[i];
+        hash *= 17;
+        hash %= 256;
+    }
 
-        // Implicit cast and we get the ASCII code.
-        current_val += file_content[0][i];
-        current_val *= 17;
-        current_val %= 256;
+    return hash;
+}
+
+int part_1(char **file_content)
+{
+    char *input = strdup(file_content[0]);
+    char *step = strtok(input, ",");
+
+    int total_val = 0;
+
+    while (step != NULL)
+    {
+        total_val += get_hash(step);
+        step = strtok(NULL, ",");
     }
 
     return total_val;
