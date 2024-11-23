@@ -84,7 +84,6 @@ int part_1(char **file_content)
         dish[i][DISH_MAX_Y] = '\0';
     }
 
-    // Iterate the dish and do the logic
     tilt_north(dish);
 
     int total = 0;
@@ -126,20 +125,19 @@ int part_2(char **file_content)
     int cycle_length = -1;
     bool cycle_found = false;
 
-    // Run until we find a cycle or hit a reasonable maximum
+    // Run until we find a cycle or hit a reasonable maximum.
     // We need to tilt north, west, south and east.
     // Meaning, we can rotate the dish and tilt north and it'll be basically the same.
     // This is for each cycle, so a single cycle will do 4 tilts and 4 rotations.
     for (int i = 0; i < 100000 && !cycle_found; i++)
     {
-        // Perform one complete cycle
         for (int j = 0; j < 4; j++)
         {
             tilt_north(dish);
             rotate_dish(dish);
         }
 
-        // Check if we've seen this state before
+        // Check if we've seen this state before.
         // We could probably use some sort of hash for the 2D array instead of this but whatever, it works!
         for (int k = 0; k < states_count; k++)
         {
