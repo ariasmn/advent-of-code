@@ -47,10 +47,10 @@ int part_1(char **file_content)
 }
 
 // Wording makes this way harder than it's in reality.
-// The idea is to implement a hashmap, whose key will be the hashed label (everything that comes before '=' or '-').
-// The hash is calculated using the same method in part 1.
-// The hash calculated (box) is the key to the hashmap, which is the 'label' in the Lens struct.
-// The "next" points to another Lens, because the same key can have multiple lenses.
+// The idea is to implement a hashmap, basically.
+// We need an array of hashmaps.
+// The array is the boxes. Each box number is essentially the index of the array, calculated by the hash of the lens label.
+// Inside each box, we have a hashmap whose key is the label of the lens.
 int part_2(char **file_content)
 {
     Lens *boxes[256] = {NULL};
