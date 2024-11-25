@@ -171,6 +171,77 @@ int part_1(char **file_content)
     return process_light(layout, initial_light);
 }
 
+// Same as part 1, but we just change the initial light and find the one that
+// generates the most energized tiles.
+// The starting point can be any edge tile.
+int part_2(char **file_content)
+{
+    // 2D array to represent the layout.
+    char layout[LAYOUT_MAX_Y][LAYOUT_MAX_X + 1]; // Null terminator
+
+    for (int i = 0; file_content[i] != NULL; i++)
+    {
+        for (int j = 0; file_content[i][j] != '\0'; j++)
+        {
+            layout[i][j] = file_content[i][j];
+        }
+        layout[i][LAYOUT_MAX_X] = '\0';
+    }
+
+    int max_count = 0;
+
+    // Calculate leftmost column.
+    for (int i = 0; i < LAYOUT_MAX_Y; i++)
+    {
+        Light initial_light = (Light){.x = 0, .y = i, .direction = RIGHT, .is_finished = false};
+        int count = process_light(layout, initial_light);
+
+        if (count > max_count)
+        {
+            max_count = count;
+        }
+    }
+
+    // Calculate rightmost column.
+    for (int i = 0; i < LAYOUT_MAX_Y; i++)
+    {
+        Light initial_light = (Light){.x = LAYOUT_MAX_X - 1, .y = i, .direction = LEFT, .is_finished = false};
+        int count = process_light(layout, initial_light);
+
+        if (count > max_count)
+        {
+            max_count = count;
+        }
+    }
+
+    // Calculate top row.
+    for (int i = 0; i < LAYOUT_MAX_X; i++)
+    {
+        Light initial_light = (Light){.x = i, .y = 0, .direction = DOWN, .is_finished = false};
+        int count = process_light(layout, initial_light);
+
+        if (count > max_count)
+        {
+            max_count = count;
+        }
+    }
+
+    // Calculate bottom row.
+    for (int i = 0; i < LAYOUT_MAX_X; i++)
+    {
+        Light initial_light = (Light){.x = i, .y = LAYOUT_MAX_Y - 1, .direction = UP, .is_finished = false};
+        int count = process_light(layout, initial_light);
+
+        if (count > max_count)
+        {
+            max_count = count;
+        }
+    }
+
+    return max_count;
+}
+
+
 int main()
 {
     FILE *fptr = fopen("input.txt", "r");
@@ -182,5 +253,5 @@ int main()
     }
 
     printf("Part 1: %d\n", part_1(file_content));
-    // printf("Part 2: %d\n", part_2(file_content));
+    printf("Part 2: %d\n", part_2(file_content));
 }
