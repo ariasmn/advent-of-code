@@ -25,24 +25,14 @@ typedef struct
     bool is_finished;
 } Light;
 
-int part_1(char **file_content)
+// process_lights holds the whole problem logic.
+// This is done in a separate function so we can reuse for part 2.
+int process_light(char layout[LAYOUT_MAX_X][LAYOUT_MAX_Y +1], Light initial_light)
 {
-    // 2D array to represent the layout.
-    char layout[LAYOUT_MAX_Y][LAYOUT_MAX_X + 1]; // Null terminator
-
-    for (int i = 0; file_content[i] != NULL; i++)
-    {
-        for (int j = 0; file_content[i][j] != '\0'; j++)
-        {
-            layout[i][j] = file_content[i][j];
-        }
-        layout[i][LAYOUT_MAX_X] = '\0';
-    }
-
     // Define the lights array and add the initial one.
     int lights_arr_size = 1;
     Light *lights = malloc(1 * sizeof(Light));
-    lights[0] = (Light){.x = 0, .y = 0, .direction = RIGHT, .is_finished = false};
+    lights[0] = initial_light;
 
     // Visited is a 3D array because we need to hold the directions.
     // We need to do this because we might enter an infinite loop.
@@ -160,6 +150,25 @@ int part_1(char **file_content)
 
     free(lights);
     return count;
+}
+
+int part_1(char **file_content)
+{
+    // 2D array to represent the layout.
+    char layout[LAYOUT_MAX_Y][LAYOUT_MAX_X + 1]; // Null terminator
+
+    for (int i = 0; file_content[i] != NULL; i++)
+    {
+        for (int j = 0; file_content[i][j] != '\0'; j++)
+        {
+            layout[i][j] = file_content[i][j];
+        }
+        layout[i][LAYOUT_MAX_X] = '\0';
+    }
+
+    Light initial_light = (Light){.x = 0, .y = 0, .direction = RIGHT, .is_finished = false};
+
+    return process_light(layout, initial_light);
 }
 
 int main()
