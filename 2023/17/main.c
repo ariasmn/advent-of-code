@@ -121,18 +121,115 @@ int part_1(char **file_content)
             int new_steps = (turn == 0) ? current.steps + 1 : 1;
 
             if (new_steps > 3)
+            {
                 continue; // Can't move more than 3 steps in the same direction
+            }
 
             int nx = current.x + dx[new_direction];
             int ny = current.y + dy[new_direction];
 
             if (nx < 0 || nx >= MAX_GRID || ny < 0 || ny >= MAX_GRID)
+            {
                 continue; // Out of bounds
+            }
 
             // Add grid[nx][ny] only for subsequent moves, not the initial position
             int new_cost = current.cost + grid[nx][ny];
             // Special case: exclude initial position's cost.
             // This is a requirement in the problem statement.
+            if (current.x == 0 && current.y == 0)
+            {
+                new_cost = grid[nx][ny];
+            }
+
+            if (new_cost < min_cost[nx][ny][new_direction][new_steps])
+            {
+                min_cost[nx][ny][new_direction][new_steps] = new_cost;
+                State next_state = {nx, ny, new_direction, new_steps, new_cost};
+                push(&pq, next_state);
+            }
+        }
+    }
+
+    return -1; // If no path is found
+}
+
+// Same as part 1, but change the max steps and add the minimum steps per direction.
+int part_2(char **file_content)
+{
+    int grid[MAX_GRID][MAX_GRID];
+
+    // Parse input grid
+    for (int i = 0; file_content[i] != NULL; i++)
+    {
+        for (int j = 0; file_content[i][j] != '\0'; j++)
+        {
+            grid[i][j] = file_content[i][j] - '0';
+        }
+    }
+
+    // Initialize the minimum cost array
+    int min_cost[MAX_GRID][MAX_GRID][4][11];
+    for (int i = 0; i < MAX_GRID; i++)
+    {
+        for (int j = 0; j < MAX_GRID; j++)
+        {
+            for (int d = 0; d < 4; d++)
+            {
+                for (int s = 0; s <= 10; s++)
+                {
+                    min_cost[i][j][d][s] = INF;
+                }
+            }
+        }
+    }
+
+    // Priority Queue setup
+    PriorityQueue pq = {NULL};
+    State start = {0, 0, -1, 0, 0}; // Start at (0, 0) with no direction and cost 0
+    push(&pq, start);
+
+    while (!is_empty(&pq))
+    {
+        State current = pop(&pq);
+
+        // Check if destination is reached
+        if (current.x == MAX_GRID - 1 && current.y == MAX_GRID - 1)
+        {
+            // Only return if we've moved at least 4 blocks
+            if (current.steps >= 4)
+                return current.cost; // Return total heat loss
+        }
+
+        // Explore moves: turn left, go straight, turn right
+        for (int turn = -1; turn <= 1; turn++)
+        {
+            int new_direction = (current.direction + turn + 4) % 4;
+            int new_steps = (turn == 0) ? current.steps + 1 : 1;
+
+            // New constraints for part 2
+            if (turn == 0 && new_steps > 10)
+            {
+                continue; // Can't move more than 10 steps in the same direction
+            }
+
+            // Skip if we're turning before moving 4 steps
+            if ((current.direction != -1) && turn != 0 && current.steps < 4)
+            {
+                continue;
+            }
+
+            int nx = current.x + dx[new_direction];
+            int ny = current.y + dy[new_direction];
+
+            if (nx < 0 || nx >= MAX_GRID || ny < 0 || ny >= MAX_GRID)
+            {
+                continue; // Out of bounds
+            }
+
+            // Add grid[nx][ny] only for subsequent moves, not the initial position
+            int new_cost = current.cost + grid[nx][ny];
+            // Special case: exclude initial position's cost.
             if (current.x == 0 && current.y == 0)
             {
                 new_cost = grid[nx][ny];
@@ -161,5 +258,5 @@ int main()
     }
 
     printf("Part 1: %d\n", part_1(file_content));
-    // printf("Part 2: %d\n", part_2(file_content));
+    printf("Part 2: %d\n", part_2(file_content));
 }
