@@ -9,11 +9,19 @@
 #define LAYOUT_MAX_X 110
 #define LAYOUT_MAX_Y 110
 
-typedef struct Light
+typedef enum
+{
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
+} Direction;
+
+typedef struct
 {
     int x;
     int y;
-    char direction;
+    Direction direction;
     bool is_finished;
 } Light;
 
@@ -28,19 +36,17 @@ int part_1(char **file_content)
         {
             layout[i][j] = file_content[i][j];
         }
-
         layout[i][LAYOUT_MAX_X] = '\0';
     }
 
     // Define the lights array and add the initial one.
     int lights_arr_size = 1;
     Light *lights = malloc(1 * sizeof(Light));
-    Light first_light = {.x = 0, .y = 0, .direction = 'r', .is_finished = false};
-    lights[0] = first_light;
+    lights[0] = (Light){.x = 0, .y = 0, .direction = RIGHT, .is_finished = false};
 
     // Visited is a 3D array because we need to hold the directions.
     // We need to do this because we might enter an infinite loop.
-    bool visited[LAYOUT_MAX_Y][LAYOUT_MAX_X][4] = {false}; // 4 directions: 0 = 'u', 1 = 'd', 2 = 'l', 3 = 'r'
+    bool visited[LAYOUT_MAX_Y][LAYOUT_MAX_X][4] = {false};
 
     // Iterate the array of lights. We might create new lights,
     // but we finish the one that we are currently iterating before moving to
@@ -49,22 +55,7 @@ int part_1(char **file_content)
     {
         while (!lights[i].is_finished)
         {
-            int dir_index;
-            switch (lights[i].direction)
-            {
-            case 'u':
-                dir_index = 0;
-                break;
-            case 'd':
-                dir_index = 1;
-                break;
-            case 'l':
-                dir_index = 2;
-                break;
-            case 'r':
-                dir_index = 3;
-                break;
-            }
+            Direction dir_index = lights[i].direction;
 
             // Check if this position with this direction was already visited.
             if (visited[lights[i].y][lights[i].x][dir_index])
@@ -73,88 +64,77 @@ int part_1(char **file_content)
                 break;
             }
 
-            // Mark this position and direction as visited.
             visited[lights[i].y][lights[i].x][dir_index] = true;
-
             char current_cell = layout[lights[i].y][lights[i].x];
 
-            // Change direction and/or create new light based on current cell.
+            // Update direction or create new lights based on the cell.
             if (current_cell == '/')
             {
-                if (lights[i].direction == 'r')
+                if (lights[i].direction == UP)
                 {
-                    lights[i].direction = 'u';
+                    lights[i].direction = RIGHT;
                 }
-                else if (lights[i].direction == 'l')
+                else if (lights[i].direction == DOWN)
                 {
-                    lights[i].direction = 'd';
+                    lights[i].direction = LEFT;
                 }
-
-                else if (lights[i].direction == 'u')
+                else if (lights[i].direction == LEFT)
                 {
-                    lights[i].direction = 'r';
+                    lights[i].direction = DOWN;
                 }
-
-                else if (lights[i].direction == 'd')
+                else if (lights[i].direction == RIGHT)
                 {
-                    lights[i].direction = 'l';
+                    lights[i].direction = UP;
                 }
             }
             else if (current_cell == '\\')
             {
-                if (lights[i].direction == 'r')
+                if (lights[i].direction == UP)
                 {
-                    lights[i].direction = 'd';
+                    lights[i].direction = LEFT;
                 }
-                else if (lights[i].direction == 'l')
+                else if (lights[i].direction == DOWN)
                 {
-                    lights[i].direction = 'u';
+                    lights[i].direction = RIGHT;
                 }
-
-                else if (lights[i].direction == 'u')
+                else if (lights[i].direction == LEFT)
                 {
-                    lights[i].direction = 'l';
+                    lights[i].direction = UP;
                 }
-
-                else if (lights[i].direction == 'd')
+                else if (lights[i].direction == RIGHT)
                 {
-                    lights[i].direction = 'r';
+                    lights[i].direction = DOWN;
                 }
             }
-            else if (current_cell == '|' && (lights[i].direction == 'r' || lights[i].direction == 'l'))
+            else if (current_cell == '|' && (lights[i].direction == LEFT || lights[i].direction == RIGHT))
             {
-                // Handle vertical splits.
-                lights[i].direction = 'u';
-                Light new_light = {.x = lights[i].x, .y = lights[i].y, .direction = 'd', .is_finished = false};
+                lights[i].direction = UP;
                 lights = realloc(lights, (lights_arr_size + 1) * sizeof(Light));
-                lights[lights_arr_size] = new_light;
-                lights_arr_size++;
+                lights[lights_arr_size++] = (Light){.x = lights[i].x, .y = lights[i].y, .direction = DOWN, .is_finished = false};
             }
-            else if (current_cell == '-' && (lights[i].direction == 'u' || lights[i].direction == 'd'))
+            else if (current_cell == '-' && (lights[i].direction == UP || lights[i].direction == DOWN))
             {
-                // Handle horizontal splits.
-                lights[i].direction = 'l';
-                Light new_light = {.x = lights[i].x, .y = lights[i].y, .direction = 'r', .is_finished = false};
+                lights[i].direction = LEFT;
                 lights = realloc(lights, (lights_arr_size + 1) * sizeof(Light));
-                lights[lights_arr_size] = new_light;
-                lights_arr_size++;
+                lights[lights_arr_size++] = (Light){.x = lights[i].x, .y = lights[i].y, .direction = RIGHT, .is_finished = false};
             }
 
-            // Calculate next position.
-            switch (lights[i].direction)
+            // Move the light.
+            if (lights[i].direction == UP)
             {
-            case 'u':
                 lights[i].y -= 1;
-                break;
-            case 'd':
+            }
+            else if (lights[i].direction == DOWN)
+            {
                 lights[i].y += 1;
-                break;
-            case 'l':
+            }
+            else if (lights[i].direction == LEFT)
+            {
                 lights[i].x -= 1;
-                break;
-            case 'r':
+            }
+            else if (lights[i].direction == RIGHT)
+            {
                 lights[i].x += 1;
-                break;
             }
 
             // Stop if out of bounds.
@@ -165,20 +145,20 @@ int part_1(char **file_content)
         }
     }
 
-    // Count how many tiles we visited.
+    // Count visited tiles.
     int count = 0;
     for (int y = 0; y < LAYOUT_MAX_Y; y++)
     {
         for (int x = 0; x < LAYOUT_MAX_X; x++)
         {
-            // Check if any direction has been visited at this tile.
-            if (visited[y][x][0] || visited[y][x][1] || visited[y][x][2] || visited[y][x][3])
+            if (visited[y][x][UP] || visited[y][x][DOWN] || visited[y][x][LEFT] || visited[y][x][RIGHT])
             {
                 count++;
             }
         }
     }
 
+    free(lights);
     return count;
 }
 
