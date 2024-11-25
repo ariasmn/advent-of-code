@@ -241,7 +241,6 @@ int part_2(char **file_content)
     return max_count;
 }
 
-
 int main()
 {
     FILE *fptr = fopen("input.txt", "r");
