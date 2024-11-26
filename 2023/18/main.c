@@ -9,8 +9,8 @@
 
 typedef struct
 {
-    int x;
-    int y;
+    long long x;
+    long long y;
 } Point;
 
 // Function to add two points
@@ -97,6 +97,56 @@ int part_1(char **file_content)
     return area / 2 + 1; // + 1 because of border width.
 }
 
+// Reuse the same formula, just change the parsing.
+// No regex here, just plain old sscanf.
+long long part_2(char **file_content)
+{
+    long long area = 0;
+    Point start = {0, 0};
+    for (int i = 0; file_content[i] != NULL; i++)
+    {
+        char hex_code[7];
+        char hex_meters[6];
+
+        sscanf(file_content[i], "%*c %*d (#%6[^)])", hex_code);
+        strncpy(hex_meters, hex_code, 5); // Separate meters and direction.
+        hex_meters[5] = '\0';
+        char direction = hex_code[5];
+
+        // Direction map
+        // Same as part 1, but using the integers instead of the chars.
+        struct DirMap
+        {
+            char dir;
+            Point point;
+        } dig_dir[] = {
+            {'0', {1, 0}},  // R
+            {'1', {0, 1}},  // D
+            {'2', {-1, 0}}, // L
+            {'3', {0, -1}}  // U
+        };
+
+        Point dir_point = {0, 0};
+        for (int i = 0; i < 4; i++)
+        {
+            if (dig_dir[i].dir == direction)
+            {
+                dir_point = dig_dir[i].point;
+                break;
+            }
+        }
+
+        // Convert meters from hex to decimal
+        long long meters = strtol(hex_meters, NULL, 16);
+
+        Point next = point_add(start, dir_point, meters);
+        area += ((start.x * next.y) - (start.y * next.x) + meters);
+        start = next;
+    }
+
+    return area / 2 + 1;
+}
+
 int main()
 {
     FILE *fptr = fopen("input.txt", "r");
@@ -108,5 +158,5 @@ int main()
     }
 
     printf("Part 1: %d\n", part_1(file_content));
-    // printf("Part 2: %d\n", part_2(file_content));
+    printf("Part 2: %lld\n", part_2(file_content));
 }
