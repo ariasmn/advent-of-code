@@ -7,7 +7,7 @@
 #include "../helper.h"
 
 #define GRID_ROWS 131
-#define GRID_COLUMNS 132 // +1 because of the null terminator.
+#define GRID_COLUMNS 131 // +1 because of the null terminator.
 #define STEPS 64
 
 // Directions: north, south, east, west
@@ -98,6 +98,11 @@ int part_1(char **file_content)
     return result;
 }
 
+long long int part_2(char **file_content)
+{
+    return 0;
+}
+
 int main()
 {
     FILE *fptr = fopen("input.txt", "r");
@@ -109,5 +114,5 @@ int main()
     }
 
     printf("Part 1: %d\n", part_1(file_content));
-    // printf("Part 2: %d\n", part_2(file_content));
+    printf("Part 2: %lld\n", part_2(file_content));
 }
