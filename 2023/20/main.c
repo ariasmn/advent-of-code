@@ -339,6 +339,9 @@ long part_1(char **file_content)
         destroy_queue(signal_queue);
     }
 
+    // Cleanup hash table.
+    hdestroy();
+
     return low_pulses * high_pulses;
 }
 
