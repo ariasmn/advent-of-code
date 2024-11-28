@@ -24,18 +24,22 @@ int part_1(char **file_content)
 {
     char grid[GRID_ROWS][GRID_COLUMNS];
     bool current_step[GRID_ROWS][GRID_COLUMNS] = {false};
-    
+
     // Copy grid
-    for (int i = 0; file_content[i] != NULL; i++) {
+    for (int i = 0; file_content[i] != NULL; i++)
+    {
         strncpy(grid[i], file_content[i], GRID_COLUMNS);
         grid[i][GRID_COLUMNS] = '\0';
     }
-    
+
     // Find starting position
     int start_row = 0, start_column = 0;
-    for (int r = 0; r < GRID_ROWS; r++) {
-        for (int c = 0; c < GRID_COLUMNS; c++) {
-            if (grid[r][c] == 'S') {
+    for (int r = 0; r < GRID_ROWS; r++)
+    {
+        for (int c = 0; c < GRID_COLUMNS; c++)
+        {
+            if (grid[r][c] == 'S')
+            {
                 start_row = r;
                 start_column = c;
                 grid[r][c] = '.'; // Replace S with .
@@ -43,45 +47,54 @@ int part_1(char **file_content)
             }
         }
     }
-    
+
     // Mark start position for first step
     current_step[start_row][start_column] = true;
-    
+
     // Perform steps
-    for (int step = 0; step < STEPS; step++) {
+    for (int step = 0; step < STEPS; step++)
+    {
         bool next_step[GRID_ROWS][GRID_COLUMNS] = {false};
-        
-        for (int r = 0; r < GRID_ROWS; r++) {
-            for (int c = 0; c < GRID_COLUMNS; c++) {
-                if (current_step[r][c]) {
+
+        for (int r = 0; r < GRID_ROWS; r++)
+        {
+            for (int c = 0; c < GRID_COLUMNS; c++)
+            {
+                if (current_step[r][c])
+                {
                     // Check all 4 directions
-                    for (int i = 0; i < 4; i++) {
+                    for (int i = 0; i < 4; i++)
+                    {
                         int new_r = r + row_directions[i];
                         int new_c = c + col_directions[i];
-                        
-                        if (is_valid(new_r, new_c) && 
-                            grid[new_r][new_c] == '.') {
+
+                        if (is_valid(new_r, new_c) &&
+                            grid[new_r][new_c] == '.')
+                        {
                             next_step[new_r][new_c] = true;
                         }
                     }
                 }
             }
         }
-        
+
         // Copy next step to current step
         memcpy(current_step, next_step, sizeof(current_step));
     }
-    
+
     // Count reachable positions
     int result = 0;
-    for (int r = 0; r < GRID_ROWS; r++) {
-        for (int c = 0; c < GRID_COLUMNS; c++) {
-            if (current_step[r][c]) {
+    for (int r = 0; r < GRID_ROWS; r++)
+    {
+        for (int c = 0; c < GRID_COLUMNS; c++)
+        {
+            if (current_step[r][c])
+            {
                 result++;
             }
         }
     }
-    
+
     return result;
 }
 
