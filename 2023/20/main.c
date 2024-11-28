@@ -8,8 +8,8 @@
 #include "../helper.h"
 
 #define MAX_DESTINATIONS 10
-#define MAX_LABEL_LENGTH 12
-#define MAX_MODULES 5
+#define MAX_LABEL_LENGTH 15
+#define MAX_MODULES 100
 
 typedef enum
 {
@@ -29,11 +29,41 @@ typedef struct
     char label[MAX_LABEL_LENGTH];
     ModuleType type;
     Signal signal;
-    char destinations[MAX_DESTINATIONS][MAX_LABEL_LENGTH]; // This should be dynamically calculated to be honest...
+    char destinations[MAX_DESTINATIONS][MAX_LABEL_LENGTH];
     int destination_count;
     bool is_on;       // For flip flops. Off by default.
     Signal last_sent; // For conjunction.
+
+    // New fields for conjunction modules
+    char inputs[MAX_MODULES][MAX_LABEL_LENGTH];
+    int input_count;
 } Module;
+
+Module *find_or_create_module(char *label)
+{
+    ENTRY *found = hsearch((ENTRY){label, NULL}, FIND);
+
+    if (found != NULL)
+    {
+        return (Module *)found->data;
+    }
+
+    // If not found, create a default module
+    Module *module = malloc(sizeof(Module));
+    strncpy(module->label, label, MAX_LABEL_LENGTH - 1);
+    module->label[MAX_LABEL_LENGTH - 1] = '\0';
+    module->type = FLIP_FLOP; // Default type
+    module->signal = LOW;
+    module->is_on = false;
+    module->destination_count = 0;
+    module->last_sent = LOW; // Initialize last_sent
+
+    // Add to hash table
+    ENTRY e = {.key = module->label, .data = module};
+    hsearch(e, ENTER);
+
+    return module;
+}
 
 // Function to determine module type based on first character
 ModuleType get_module_type(const char *label)
@@ -73,6 +103,8 @@ Queue *create_queue()
 // Enqueue a copy of the module into the queue
 void enqueue(Queue *queue, Module *module)
 {
+    printf("-%s->%s\n", module->signal ? "high" : "low", module->label);
+
     QueueNode *new_node = malloc(sizeof(QueueNode));
     if (!new_node)
     {
@@ -137,6 +169,10 @@ long part_1(char **file_content)
     // Initialize hash table for modules.
     hcreate(MAX_MODULES);
 
+    // Array with the module labels, used to parse the connected input labels.
+    char module_labels[MAX_MODULES][MAX_LABEL_LENGTH];
+    int module_labels_arr_size = 0;
+
     for (int i = 0; file_content[i] != NULL; i++)
     {
         char destinations_str[50] = {0};
@@ -150,7 +186,7 @@ long part_1(char **file_content)
         modified_line = str_replace(modified_line, " ", "");
 
         // Scan each line into its label and its destinations.
-        sscanf(modified_line, "%11[^->]->%49[^\n]", raw_label, destinations_str);
+        sscanf(modified_line, "%12[^->]->%49[^\n]", raw_label, destinations_str);
 
         // Create the module.
         Module *module = malloc(sizeof(Module));
@@ -183,9 +219,31 @@ long part_1(char **file_content)
         }
         module->destination_count = dest_index;
 
+        // We store the module labels, to later pass on and find all the connected inputs.
+        strncpy(module_labels[module_labels_arr_size], module->label, MAX_LABEL_LENGTH - 1);
+        module_labels[module_labels_arr_size][MAX_LABEL_LENGTH - 1] = '\0';
+        module_labels_arr_size++;
+
         // Add the module to the hash table.
         ENTRY e = {.key = module->label, .data = module};
         hsearch(e, ENTER) == NULL;
+    }
+
+    // Pass and parse the conjunction inputs.
+    for (int l = 0; l < module_labels_arr_size; l++)
+    {
+        Module *found = (Module *)hsearch((ENTRY){module_labels[l], NULL}, FIND)->data;
+        for (int c = 0; c < found->destination_count; c++)
+        {
+            // If destination is conjunction, we need to add the current module to its input list.
+            Module *conjunction = find_or_create_module(found->destinations[c]);
+            if (conjunction->type == CONJUNCTION)
+            {
+                strncpy(conjunction->inputs[conjunction->input_count], found->label, MAX_LABEL_LENGTH - 1);
+                conjunction->inputs[conjunction->input_count][MAX_LABEL_LENGTH - 1] = '\0';
+                conjunction->input_count++;
+            }
+        }
     }
 
     // We now push the button 1000 times and do the calculations.
@@ -223,7 +281,7 @@ long part_1(char **file_content)
                 // Get the destinations and add to queue.
                 for (int c = 0; c < current.destination_count; c++)
                 {
-                    Module *dest = (Module *)hsearch((ENTRY){current.destinations[c], NULL}, FIND)->data;
+                    Module *dest = find_or_create_module(current.destinations[c]);
                     dest->signal = current.signal;
                     enqueue(signal_queue, dest);
                 }
@@ -243,7 +301,7 @@ long part_1(char **file_content)
                     // Send the new signal to all destinations
                     for (int c = 0; c < current.destination_count; c++)
                     {
-                        Module *dest = (Module *)hsearch((ENTRY){current.destinations[c], NULL}, FIND)->data;
+                        Module *dest = find_or_create_module(current.destinations[c]);
                         dest->signal = new_signal;
                         enqueue(signal_queue, dest);
                     }
@@ -252,11 +310,12 @@ long part_1(char **file_content)
                 break;
             case CONJUNCTION:
                 Signal to_send = LOW;
-                for (int c = 0; c < current.destination_count; c++)
+                for (int c = 0; c < current.input_count; c++)
                 {
-                    Module *dest = (Module *)hsearch((ENTRY){current.destinations[c], NULL}, FIND)->data;
-                    if (dest->last_sent == LOW)
+                    Module *input = find_or_create_module(current.inputs[c]);
+                    if (input->last_sent == LOW)
                     {
+                        printf("%s\n", input->label);
                         to_send = HIGH;
                         break;
                     }
