@@ -31,11 +31,12 @@ typedef struct
     Signal signal;
     char destinations[MAX_DESTINATIONS][MAX_LABEL_LENGTH];
     int destination_count;
-    bool is_on;       // For flip flops. Off by default.
-    Signal last_sent; // For conjunction.
+    bool is_on; // For flip flops. Off by default.
 
-    // New fields for conjunction modules
+    // Fields for conjunction modules.
+    char queued_by[MAX_LABEL_LENGTH]; // To modify the input_states easily.
     char inputs[MAX_MODULES][MAX_LABEL_LENGTH];
+    Signal input_states[MAX_MODULES];
     int input_count;
 } Module;
 
@@ -56,7 +57,6 @@ Module *find_or_create_module(char *label)
     module->signal = LOW;
     module->is_on = false;
     module->destination_count = 0;
-    module->last_sent = LOW; // Initialize last_sent
 
     // Add to hash table
     ENTRY e = {.key = module->label, .data = module};
@@ -103,14 +103,9 @@ Queue *create_queue()
 // Enqueue a copy of the module into the queue
 void enqueue(Queue *queue, Module *module)
 {
-    printf("-%s->%s\n", module->signal ? "high" : "low", module->label);
+    // printf("%s -%s-> %s\n", module->queued_by, module->signal ? "high" : "low", module->label);
 
     QueueNode *new_node = malloc(sizeof(QueueNode));
-    if (!new_node)
-    {
-        fprintf(stderr, "Error: Memory allocation failed for queue node.\n");
-        exit(EXIT_FAILURE);
-    }
 
     // Copy the module data
     memcpy(&new_node->data, module, sizeof(Module));
@@ -129,12 +124,6 @@ void enqueue(Queue *queue, Module *module)
 // Dequeue an element from the queue (returns a copy of the Module)
 Module dequeue(Queue *queue)
 {
-    if (queue->front == NULL)
-    {
-        fprintf(stderr, "Error: Attempting to dequeue from an empty queue.\n");
-        exit(EXIT_FAILURE);
-    }
-
     QueueNode *temp = queue->front;
     Module data;
     memcpy(&data, &temp->data, sizeof(Module)); // Copy the module data
@@ -240,6 +229,7 @@ long part_1(char **file_content)
             if (conjunction->type == CONJUNCTION)
             {
                 strncpy(conjunction->inputs[conjunction->input_count], found->label, MAX_LABEL_LENGTH - 1);
+                conjunction->input_states[conjunction->input_count] = LOW; // Default to LOW
                 conjunction->inputs[conjunction->input_count][MAX_LABEL_LENGTH - 1] = '\0';
                 conjunction->input_count++;
             }
@@ -283,6 +273,8 @@ long part_1(char **file_content)
                 {
                     Module *dest = find_or_create_module(current.destinations[c]);
                     dest->signal = current.signal;
+                    strncpy(dest->queued_by, current.label, MAX_LABEL_LENGTH - 1);
+                    dest->queued_by[MAX_LABEL_LENGTH - 1] = '\0';
                     enqueue(signal_queue, dest);
                 }
                 break;
@@ -290,40 +282,55 @@ long part_1(char **file_content)
                 // Only process LOW pulses
                 if (current.signal == LOW)
                 {
-                    Module *save_last_sent = (Module *)hsearch((ENTRY){current.label, NULL}, FIND)->data;
+                    Module *fcurr = (Module *)hsearch((ENTRY){current.label, NULL}, FIND)->data;
                     // Toggle the state
-                    save_last_sent->is_on = !save_last_sent->is_on;
+                    fcurr->is_on = !fcurr->is_on;
 
                     // Send a pulse based on the new state
-                    Signal new_signal = save_last_sent->is_on ? HIGH : LOW;
-                    save_last_sent->last_sent = new_signal;
+                    Signal new_signal = fcurr->is_on ? HIGH : LOW;
 
                     // Send the new signal to all destinations
                     for (int c = 0; c < current.destination_count; c++)
                     {
                         Module *dest = find_or_create_module(current.destinations[c]);
                         dest->signal = new_signal;
+                        strncpy(dest->queued_by, current.label, MAX_LABEL_LENGTH - 1);
+                        dest->queued_by[MAX_LABEL_LENGTH - 1] = '\0';
                         enqueue(signal_queue, dest);
                     }
                 }
                 // Ignore HIGH pulses
                 break;
             case CONJUNCTION:
-                Signal to_send = LOW;
-                for (int c = 0; c < current.input_count; c++)
+                // First, find and update the specific input's state
+                Module *current_module = (Module *)hsearch((ENTRY){current.label, NULL}, FIND)->data;
+                for (int c = 0; c < current_module->input_count; c++)
                 {
-                    Module *input = find_or_create_module(current.inputs[c]);
-                    if (input->last_sent == LOW)
+                    if (strcmp(current_module->inputs[c], current.queued_by) == 0)
                     {
-                        printf("%s\n", input->label);
+                        current_module->input_states[c] = current.signal;
+                        break;
+                    }
+                }
+
+                // Now check if ALL inputs are HIGH
+                Signal to_send = LOW;
+                for (int c = 0; c < current_module->input_count; c++)
+                {
+                    if (current_module->input_states[c] == LOW)
+                    {
                         to_send = HIGH;
                         break;
                     }
                 }
-                for (int c = 0; c < current.destination_count; c++)
+
+                // Send signal to destinations
+                for (int c = 0; c < current_module->destination_count; c++)
                 {
-                    Module *dest = (Module *)hsearch((ENTRY){current.destinations[c], NULL}, FIND)->data;
+                    Module *dest = find_or_create_module(current_module->destinations[c]);
                     dest->signal = to_send;
+                    strncpy(dest->queued_by, current_module->label, MAX_LABEL_LENGTH - 1);
+                    dest->queued_by[MAX_LABEL_LENGTH - 1] = '\0';
                     enqueue(signal_queue, dest);
                 }
                 break;
