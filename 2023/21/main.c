@@ -1,3 +1,11 @@
+// DISCLAIMER: Starting day 21, I've been just looking at solutions from another languages I know (Golang, PHP...)
+// and basically doing it in my own way in C.
+// I looked at different solutions and took ideas from all of them to make my own version, so I can't link to the solution directly,
+// but all of the solutions can be found in the subreddit: https://www.reddit.com/r/adventofcode/.
+// When I started AoC 2023, it was because I wanted to learn C and
+// honestly, I wasn't in the mood to solve certain puzzles (I got a bit tired of it in AoC 2022).
+// So, since I struggled A LOT in day 20, I've decided to just do it this way.
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
