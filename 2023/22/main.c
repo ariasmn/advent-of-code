@@ -133,6 +133,53 @@ bool can_disintegrate(Brick *brick)
     return true;
 }
 
+// Simulates a chain reaction by tracking which bricks will fall if a support is removed.
+// For each brick:
+// - Checks if it has any remaining non-disintegrated supports.
+// - If it has no supports and isn't on the ground, it falls.
+// - Continues checking until no more bricks can fall.
+int count_chain_reaction(Brick **bricks, int bricks_count, Brick *initial_brick)
+{
+    bool *disintegrated = calloc(bricks_count, sizeof(bool));
+    bool *will_fall = calloc(bricks_count, sizeof(bool));
+    int fall_count = 0;
+
+    disintegrated[initial_brick->id] = true;
+
+    bool changed = true;
+    while (changed)
+    {
+        changed = false;
+        for (int i = 0; i < bricks_count; i++)
+        {
+            Brick *brick = bricks[i];
+            if (!will_fall[brick->id] && !disintegrated[brick->id])
+            {
+                // Count how many non-disintegrated supports this brick has
+                int supported_count = 0;
+                for (int j = 0; j < brick->below_count; j++)
+                {
+                    Brick *support = brick->bricks_below[j];
+                    if (is_level_below(support, brick) && !disintegrated[support->id])
+                        supported_count++;
+                }
+                // If brick has no supports and isn't on ground level, it falls.
+                if (supported_count == 0 && brick->below_count > 0)
+                {
+                    will_fall[brick->id] = true;
+                    disintegrated[brick->id] = true;
+                    fall_count++;
+                    changed = true;
+                }
+            }
+        }
+    }
+
+    free(disintegrated);
+    free(will_fall);
+    return fall_count;
+}
+
 int part_1(char **file_content)
 {
     int bricks_arr_size = 0;
@@ -211,6 +258,75 @@ int part_1(char **file_content)
     return result;
 }
 
+int part_2(char **file_content)
+{
+    // Copy and paste parsing and sorting.
+    int bricks_arr_size = 0;
+    Brick **bricks = malloc(bricks_arr_size * sizeof(Brick *));
+
+    for (int i = 0; file_content[i] != NULL; i++)
+    {
+        Brick *brick = calloc(1, sizeof(Brick));
+        brick->id = i;
+
+        int nums[6];
+        char *ptr = file_content[i];
+        for (int j = 0; j < 6; j++)
+        {
+            while (*ptr && !isdigit(*ptr))
+                ptr++;
+            nums[j] = atoi(ptr);
+            while (*ptr && isdigit(*ptr))
+                ptr++;
+        }
+
+        brick->pos1 = (Point){nums[0], nums[1], nums[2]};
+        brick->pos2 = (Point){nums[3], nums[4], nums[5]};
+
+        bricks = realloc(bricks, (bricks_arr_size + 1) * sizeof(Brick *));
+        bricks[bricks_arr_size] = brick;
+        bricks_arr_size++;
+    }
+
+    qsort(bricks, bricks_arr_size, sizeof(Brick *), compare_bricks);
+
+    for (int i = 0; i < bricks_arr_size; i++)
+    {
+        Brick *falling = bricks[i];
+        if (get_lowest_z(falling) == 1)
+            continue;
+
+        int highest_point = 1;
+
+        for (int j = 0; j < i; j++)
+        {
+            Brick *lower = bricks[j];
+            if (is_under(lower, falling))
+            {
+                add_brick_above(lower, falling);
+                add_brick_below(falling, lower);
+                highest_point = MAX(highest_point, get_highest_z(lower) + 1);
+            }
+        }
+
+        if (get_lowest_z(falling) > highest_point)
+        {
+            int drop_amount = get_lowest_z(falling) - highest_point;
+            falling->pos1.z -= drop_amount;
+            falling->pos2.z -= drop_amount;
+        }
+    }
+
+    // Everything is the same as part 1 until this point.
+    int total_falls = 0;
+    for (int i = 0; i < bricks_arr_size; i++)
+    {
+        total_falls += count_chain_reaction(bricks, bricks_arr_size, bricks[i]);
+    }
+
+    return total_falls;
+}
+
 int main()
 {
     FILE *fptr = fopen("input.txt", "r");
@@ -222,6 +338,7 @@ int main()
     }
 
     printf("Part 1: %d\n", part_1(file_content));
+    printf("Part 2: %d\n", part_2(file_content));
 
     return 0;
 }
