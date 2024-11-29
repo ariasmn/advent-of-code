@@ -1,3 +1,11 @@
+// DISCLAIMER: Starting day 21, I've been just looking at solutions from another languages I know (Golang, PHP...)
+// and basically doing it in my own way in C.
+// I looked at different solutions and took ideas from all of them to make my own version, so I can't link to the solution directly,
+// but all of the solutions can be found in the subreddit: https://www.reddit.com/r/adventofcode/.
+// When I started AoC 2023, it was because I wanted to learn C and
+// honestly, I wasn't in the mood to solve certain puzzles (I got a bit tired of it in AoC 2022).
+// So, since I struggled A LOT in day 20, I've decided to just do it this way.
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -40,7 +48,7 @@ bool is_valid_move(char **grid, int x, int y, bool **visited)
 // Even though I much prefer BFS, in this specific problem, wouldn't be the best choice,
 // mainly because the "never visiting the same tile" constraint would make it harder to code.
 // Also, since we need the LONGEST, we'd need to explore all paths, and memory usage will be greater using BFS (right?).
-void dfs(char **grid, int x, int y, bool **visited, int length, Point end)
+void dfs(char **grid, int x, int y, bool **visited, int length, Point end, bool is_part_two)
 {
     if (x == end.x && y == end.y)
     {
@@ -54,7 +62,7 @@ void dfs(char **grid, int x, int y, bool **visited, int length, Point end)
     visited[x][y] = true;
 
     char current = grid[x][y];
-    if (current == '>' || current == 'v' || current == '<' || current == '^')
+    if (!is_part_two && (current == '>' || current == 'v' || current == '<' || current == '^'))
     {
         // Handle slopes.
         int dir;
@@ -81,7 +89,7 @@ void dfs(char **grid, int x, int y, bool **visited, int length, Point end)
 
         if (is_valid_move(grid, new_x, new_y, visited))
         {
-            dfs(grid, new_x, new_y, visited, length + 1, end);
+            dfs(grid, new_x, new_y, visited, length + 1, end, is_part_two);
         }
     }
     else
@@ -94,7 +102,7 @@ void dfs(char **grid, int x, int y, bool **visited, int length, Point end)
 
             if (is_valid_move(grid, new_x, new_y, visited))
             {
-                dfs(grid, new_x, new_y, visited, length + 1, end);
+                dfs(grid, new_x, new_y, visited, length + 1, end, is_part_two);
             }
         }
     }
@@ -118,7 +126,33 @@ int part_1(char **file_content)
     max_length = 0;
     // It hit me now: no need to parse grids the way I've been doing it in past problems, since
     // it's already "parsed" with the read_file function...
-    dfs(file_content, start.x, start.y, visited, 0, end);
+    dfs(file_content, start.x, start.y, visited, 0, end, false);
+
+    // Free visited array
+    for (int i = 0; i < GRID_SIZE; i++)
+    {
+        free(visited[i]);
+    }
+    free(visited);
+
+    return max_length;
+}
+
+// Literally the same as part 1, just avoiding the special treatment on the slopes when calculating.
+// It takes longer since we are "bruteforcing", around 6 minutes, but couldn't care less at this point.
+int part_2(char **file_content)
+{
+    Point start = {0, 1};
+    Point end = {GRID_SIZE - 1, GRID_SIZE - 2};
+
+    bool **visited = malloc(GRID_SIZE * sizeof(bool *));
+    for (int i = 0; i < GRID_SIZE; i++)
+    {
+        visited[i] = calloc(GRID_SIZE, sizeof(bool));
+    }
+
+    max_length = 0;
+    dfs(file_content, start.x, start.y, visited, 0, end, true);
 
     // Free visited array
     for (int i = 0; i < GRID_SIZE; i++)
@@ -141,7 +175,7 @@ int main()
     }
 
     printf("Part 1: %d\n", part_1(file_content));
-    // printf("Part 2: %d\n", part_2(file_content));
+    printf("Part 2: %d\n", part_2(file_content));
 
     return 0;
 }
