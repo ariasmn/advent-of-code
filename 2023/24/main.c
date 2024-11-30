@@ -114,16 +114,23 @@ int part_1(char **file_content)
     return intersections;
 }
 
+long long int part_2(char **file_content)
+{
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     FILE *fptr = fopen("input.txt", "r");
     char **file_content = read_file(fptr);
+
     if (file_content == NULL)
     {
         return 1;
     }
 
     printf("Part 1: %d\n", part_1(file_content));
-    // printf("Part 2: %d\n", part_1(file_content));
+    printf("Part 2: %lld\n", part_2(file_content));
+
     return 0;
 }
