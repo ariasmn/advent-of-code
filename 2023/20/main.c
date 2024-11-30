@@ -475,19 +475,6 @@ long part_2(char **file_content)
             break;
     }
 
-    if (!rx_input)
-    {
-        fprintf(stderr, "No module feeding into rx found\n");
-        return -1;
-    }
-
-    // We're assuming rx_input is a Conjunction module
-    if (rx_input->type != CONJUNCTION)
-    {
-        fprintf(stderr, "Module feeding into rx is not a Conjunction module\n");
-        return -1;
-    }
-
     // Track cycle lengths for each input
     long *cycle_lengths = calloc(rx_input->input_count, sizeof(long));
     bool *found_cycles = calloc(rx_input->input_count, sizeof(bool));
