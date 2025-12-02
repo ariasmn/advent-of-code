@@ -68,9 +68,9 @@ fn rotate_and_count(current: Int, instruction: String) -> #(Int, Int) {
     "L" -> {
       // Count how many clicks we need to take to get to 0.
       let clicks_to_zero = case current {
-        // Already at 0, next is after 100 clicks
+        // Already at 0, next is after 100 clicks.
         0 -> 100
-        // Hit 0 after 'current' clicks (because we're going backwards)
+        // Hit 0 after 'current' clicks (because we're going backwards).
         _ -> current
       }
       // We can calculate knowing if the number of clicks we are going to do will take us to 0.
@@ -89,11 +89,10 @@ fn rotate_and_count(current: Int, instruction: String) -> #(Int, Int) {
   }
 
   // Why try to do modular arithmetic when a way more intelligent person than me
-  // already did it and added to the standard lib? :D
+  // already did it and added it to the standard lib? :D
   // Unwrap returns the value if there's an error. It's impossible to get an error because the divisor is always 100,
   // and this only returns an error if it's 0, but we still need to do something about it.
   let new_pos = int.modulo(new_pos_raw, 100) |> result.unwrap(0)
 
-  // Return tuple of (final_position, zero_passes)
   #(new_pos, passes)
 }
