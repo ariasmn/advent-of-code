@@ -19,7 +19,7 @@ pub fn main() {
     })
 
   format.printf("Part 1: ~b\n", part_1(grid))
-  format.printf("Part 2: ~b\n", part_2(grid))
+  format.printf("Part 2: ~b\n", part_2(grid, 0))
 }
 
 fn part_1(grid: dict.Dict(#(Int, Int), String)) -> Int {
@@ -65,6 +65,45 @@ fn part_1(grid: dict.Dict(#(Int, Int), String)) -> Int {
   rolls
 }
 
-fn part_2(_: dict.Dict(#(Int, Int), String)) -> Int {
-  0
+fn part_2(grid: dict.Dict(#(Int, Int), String), removed_count: Int) -> Int {
+  // Find accessible rolls
+  let to_remove =
+    // acc here is the positions (rolls) we need to remove.
+    dict.fold(grid, from: [], with: fn(acc, pos, val) {
+      case val == "@" {
+        False -> acc
+        True -> {
+          let #(row, col) = pos
+          let neighbour_count =
+            [
+              #(row - 1, col - 1),
+              #(row - 1, col),
+              #(row - 1, col + 1),
+              #(row, col - 1),
+              #(row, col + 1),
+              #(row + 1, col - 1),
+              #(row + 1, col),
+              #(row + 1, col + 1),
+            ]
+            |> list.filter_map(fn(np) { dict.get(grid, np) })
+            |> list.count(fn(n) { n == "@" })
+
+          case neighbour_count < 4 {
+            // This is a way of preprending to a list in Gleam, quite useful.
+            True -> [pos, ..acc]
+            False -> acc
+          }
+        }
+      }
+    })
+
+  case to_remove {
+    [] -> removed_count
+    _ -> {
+      // Basically create a new list by iterating over the current grid and removing what we calculated.
+      // Then, by recursion, keep on doing this.
+      let new_grid = list.fold(to_remove, grid, dict.delete)
+      part_2(new_grid, removed_count + list.length(to_remove))
+    }
+  }
 }
