@@ -1,7 +1,6 @@
 import gleam/format
 import gleam/int
 import gleam/list
-import gleam/set
 import gleam/string
 import simplifile
 
