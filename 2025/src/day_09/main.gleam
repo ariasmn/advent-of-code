@@ -4,6 +4,10 @@ import gleam/list
 import gleam/string
 import simplifile
 
+pub type Rectangle {
+  Rectangle(min_x: Int, max_x: Int, min_y: Int, max_y: Int, area: Int)
+}
+
 pub fn main() {
   let assert Ok(content) = simplifile.read(from: "./src/day_09/input.txt")
 
@@ -41,6 +45,70 @@ fn part_1(positions: List(#(Int, Int))) -> Int {
   |> list.fold(from: 0, with: int.max)
 }
 
-fn part_2(_: List(#(Int, Int))) -> Int {
-  0
+// I really struggled with this. I tried to use Ray Casting, as I learnt in 2023 day 10, to delimit each rectangle,
+// but this was quite slow since we need to check all the points, so I did manage to get one solution that worked for
+// the test input, but not for the normal input.
+// I found some help in this blog https://todd.ginsberg.com/post/advent-of-code/2025/day9/#d9p2, which explained
+// his approach and it really clicked. It's actually quite simple once you understand it to be honest.
+fn part_2(positions: List(#(Int, Int))) -> Int {
+  // Create all rectangles from position pairs, sorted by area (largest first).
+  let rectangles =
+    list.combination_pairs(positions)
+    |> list.map(fn(pair) {
+      let #(#(x1, y1), #(x2, y2)) = pair
+      let min_x = int.min(x1, x2)
+      let max_x = int.max(x1, x2)
+      let min_y = int.min(y1, y2)
+      let max_y = int.max(y1, y2)
+      let area = { max_x - min_x + 1 } * { max_y - min_y + 1 }
+      Rectangle(min_x, max_x, min_y, max_y, area)
+    })
+    |> list.sort(fn(a, b) { int.compare(b.area, a.area) })
+
+  // Create boundary lines between consecutive red tiles.
+  let assert Ok(first_pos) = list.first(positions)
+  let lines =
+    list.append(positions, [first_pos])
+    |> list.window_by_2()
+    |> list.map(fn(pair) {
+      let #(#(x1, y1), #(x2, y2)) = pair
+      Rectangle(
+        int.min(x1, x2),
+        int.max(x1, x2),
+        int.min(y1, y2),
+        int.max(y1, y2),
+        0,
+      )
+    })
+
+  // For each rectangle (starting with largest):
+  // Shrink it by 1 on all sides to get the "inner rectangle"
+  // Check if this inner rectangle overlaps ANY boundary line.
+  // If NO overlap, the rectangle is valid.
+  // Return its area, which should be the solution since it's sorted.
+  let assert Ok(valid_rect) =
+    list.find(rectangles, fn(rect) {
+      // Inner rectangle (shrink by 1 on all sides)
+      let inner =
+        Rectangle(
+          rect.min_x + 1,
+          rect.max_x - 1,
+          rect.min_y + 1,
+          rect.max_y - 1,
+          0,
+        )
+
+      // Check if any line overlaps the inner rectangle
+      !list.any(lines, fn(line) {
+        ranges_overlap(inner.min_x, inner.max_x, line.min_x, line.max_x)
+        && ranges_overlap(inner.min_y, inner.max_y, line.min_y, line.max_y)
+      })
+    })
+
+  valid_rect.area
+}
+
+// Check if two ranges overlap
+fn ranges_overlap(a_min: Int, a_max: Int, b_min: Int, b_max: Int) -> Bool {
+  int.max(a_min, b_min) <= int.min(a_max, b_max)
 }
